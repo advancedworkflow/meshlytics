@@ -1,0 +1,26 @@
+{
+  "name": "meshlytics-monorepo",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Open-source analytics instrumentation for modern web apps.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "pnpm@10.18.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "typecheck": "turbo run typecheck",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "turbo run test",
+    "clean": "turbo run clean",
+    "changeset": "changeset"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.10",
+    "@types/node": "^22.10.0",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  }
+}
