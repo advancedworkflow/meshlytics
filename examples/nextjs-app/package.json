@@ -1,0 +1,24 @@
+{
+  "name": "example-nextjs-app",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Sample Next.js App Router project used to demo `meshlytics scan` / `instrument`.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@meshlytics/next": "workspace:*",
+    "meshlytics": "workspace:*",
+    "next": "^15.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.7.2"
+  }
+}

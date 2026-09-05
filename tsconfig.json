@@ -1,0 +1,14 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/schema" },
+    { "path": "packages/discovery" },
+    { "path": "packages/instrumentation" },
+    { "path": "packages/engine" },
+    { "path": "packages/sdk" },
+    { "path": "packages/cli" },
+    { "path": "packages/adapters/next" },
+    { "path": "packages/adapters/react" }
+  ]
+}

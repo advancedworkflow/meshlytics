@@ -1,0 +1,7 @@
+{
+  "name": "@meshlytics/nuxt",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Planned: Nuxt module for Meshlytics. Not implemented yet.",
+  "license": "MIT"
+}
