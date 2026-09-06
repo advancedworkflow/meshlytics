@@ -3,3 +3,4 @@ packages:
   - "packages/adapters/*"
   - "apps/*"
   - "examples/*"
+  - "tests/*"

@@ -1,0 +1,8 @@
+{
+  "name": "fixture-nextjs-app-router",
+  "private": true,
+  "description": "Not a real package — just enough of a package.json for detectFramework() to recognize this directory as a Next.js project in tests.",
+  "dependencies": {
+    "next": "^15.0.0"
+  }
+}
