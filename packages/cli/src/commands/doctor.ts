@@ -6,7 +6,7 @@ import { brand, fail, heading, ok } from "../ui.js";
 export async function doctorCommand(cwd: string): Promise<void> {
   heading(brand("meshlytics doctor"));
 
-  const [major] = process.versions.node.split(".").map(Number);
+  const [major = 0] = process.versions.node.split(".").map(Number);
   major >= 18 ? ok(`Node.js ${process.versions.node}`) : fail(`Node.js ${process.versions.node} (need >=18)`);
 
   existsSync(`${cwd}/package.json`) ? ok("package.json found") : fail("No package.json in this directory");
