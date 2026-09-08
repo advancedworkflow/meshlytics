@@ -1,10 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { ApplicationModelSchema } from "@meshlytics/schema";
-import type { z } from "zod";
+import type { ApplicationModel } from "@meshlytics/schema";
 
-type Framework = z.infer<typeof ApplicationModelSchema>["framework"];
-type RouterKind = z.infer<typeof ApplicationModelSchema>["router"];
+type Framework = ApplicationModel["framework"];
+type RouterKind = ApplicationModel["router"];
 
 export interface FrameworkInfo {
   framework: Framework;
