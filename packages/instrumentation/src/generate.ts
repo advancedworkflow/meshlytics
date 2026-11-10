@@ -25,6 +25,16 @@ export function generateInstrumentationModule(plan: InstrumentationPlan): string
     )
     .join(",\n");
 
+  // Untracked discovered routes still have to reach the SDK so a more
+  // specific untracked page (/projects/new) isn't counted under a
+  // tracked pattern (/projects/[id]).
+  const trackedPaths = new Set(plan.tracked.map((tracked) => tracked.route.path));
+  const excludedLiteral = plan.application.routes
+    .map((route) => route.path)
+    .filter((path) => !trackedPaths.has(path))
+    .map((path) => `      ${JSON.stringify(path)},`)
+    .join("\n");
+
   return `${HEADER}
 import { createClient } from "meshlytics";
 
@@ -38,6 +48,9 @@ export const meshlytics = createClient({
     },
     routes: [
 ${routesLiteral}
+    ],
+    excludedRoutes: [
+${excludedLiteral}
     ],
   },
 });

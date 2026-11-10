@@ -1,6 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import { createClient } from "./client.js";
-import type { MeshlyticsPlan } from "./types.js";
+import type { MeshlyticsPlan, PlanRoute } from "./types.js";
+
+const ALL_ON: PlanRoute["params"] = { routeParams: true, queryParams: true, utmParams: true, referrer: true };
+
+function makePlan(routes: PlanRoute[], excludedRoutes?: string[]): MeshlyticsPlan {
+  return {
+    version: 1,
+    generatedAt: "2026-09-06T12:00:00.000Z",
+    application: { framework: "next", router: "app" },
+    routes,
+    excludedRoutes,
+  };
+}
 
 describe("createClient().track", () => {
   it("emits a named event carrying properties and a session/anonymous id", () => {
@@ -74,19 +86,71 @@ describe("createClient().page", () => {
     expect(event.referrer).toBe("r");
   });
 
-  it("does not touch parameters for a route the plan doesn't mention", () => {
-    const plan: MeshlyticsPlan = {
-      version: 1,
-      generatedAt: "2026-09-06T12:00:00.000Z",
-      application: { framework: "next", router: "app" },
-      routes: [{ path: "/tracked", params: { routeParams: true, queryParams: false, utmParams: true, referrer: true } }],
-    };
+  it("emits nothing for a route the plan doesn't mention", () => {
     const transport = vi.fn();
-    const client = createClient({ transport, plan });
+    const client = createClient({
+      transport,
+      plan: makePlan([{ path: "/tracked", params: ALL_ON }]),
+    });
 
     client.page({ route: "/untracked", queryParams: { a: "1" } });
 
-    expect(transport.mock.calls[0]![0].queryParams).toEqual({ a: "1" });
+    expect(transport).not.toHaveBeenCalled();
+  });
+
+  it("matches a dynamic route and reports the pattern plus extracted params", () => {
+    const transport = vi.fn();
+    const client = createClient({
+      transport,
+      plan: makePlan([{ path: "/dashboard/projects/[id]", params: ALL_ON }]),
+    });
+
+    client.page({ route: "/dashboard/projects/42" });
+
+    const event = transport.mock.calls[0]![0];
+    expect(event.route).toBe("/dashboard/projects/[id]");
+    expect(event.routeParams).toEqual({ id: "42" });
+  });
+
+  it("does not attribute an untracked static page to a tracked dynamic pattern", () => {
+    const transport = vi.fn();
+    const client = createClient({
+      transport,
+      plan: makePlan([{ path: "/projects/[id]", params: ALL_ON }], ["/projects/new"]),
+    });
+
+    client.page({ route: "/projects/new" });
+    expect(transport).not.toHaveBeenCalled();
+
+    client.page({ route: "/projects/42" });
+    expect(transport.mock.calls[0]![0].routeParams).toEqual({ id: "42" });
+  });
+
+  it("drops route params when the plan disables them, and never leaks them via route", () => {
+    const transport = vi.fn();
+    const client = createClient({
+      transport,
+      plan: makePlan([{ path: "/users/[id]", params: { ...ALL_ON, routeParams: false } }]),
+    });
+
+    client.page({ route: "/users/jane@example.com" });
+
+    const event = transport.mock.calls[0]![0];
+    expect(event.route).toBe("/users/[id]");
+    expect(event.routeParams).toBeUndefined();
+    expect(JSON.stringify(event)).not.toContain("jane");
+  });
+
+  it("does not leak query params on a dynamic route whose plan disables them", () => {
+    const transport = vi.fn();
+    const client = createClient({
+      transport,
+      plan: makePlan([{ path: "/reset/[token]", params: { ...ALL_ON, queryParams: false } }]),
+    });
+
+    client.page({ route: "/reset/abc", queryParams: { email: "a@b.com" } });
+
+    expect(transport.mock.calls[0]![0].queryParams).toBeUndefined();
   });
 });
 

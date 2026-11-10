@@ -1,5 +1,7 @@
 export { createClient } from "./client.js";
 export { createFetchTransport } from "./transport.js";
+export { createRouteMatcher, normalizePathname } from "./match.js";
+export type { RouteMatch } from "./match.js";
 export type {
   EventTransport,
   MeshlyticsClient,
