@@ -1,4 +1,5 @@
-import { BUILTIN_EVENTS, generateAnonymousId, generateSessionId, type MeshEvent } from "@meshlytics/core";
+import { BUILTIN_EVENTS, type MeshEvent } from "@meshlytics/core";
+import { createIdentity } from "./identity.js";
 import { createRouteMatcher, normalizePathname } from "./match.js";
 import { createFetchTransport, noopTransport } from "./transport.js";
 import type { MeshlyticsClient, MeshlyticsClientOptions, PageOptions } from "./types.js";
@@ -8,11 +9,22 @@ export function createClient(options: MeshlyticsClientOptions = {}): MeshlyticsC
     options.transport ??
     (options.endpoint ? createFetchTransport(options.endpoint) : noopTransport);
 
-  const sessionId = generateSessionId();
-  const anonymousId = generateAnonymousId();
+  const identity = createIdentity({
+    storage: options.storage,
+    sessionTimeoutMs: options.sessionTimeoutMs,
+  });
   const matchRoute = options.plan ? createRouteMatcher(options.plan.routes, options.plan.excludedRoutes) : undefined;
 
-  function emit(event: MeshEvent): void {
+  type EventBody = Omit<MeshEvent, "sessionId" | "anonymousId" | "userId">;
+
+  /** Stamps identity at send time, so a session that expired between two events rolls over. */
+  function emit(body: EventBody): void {
+    const event: MeshEvent = {
+      ...body,
+      sessionId: identity.sessionId(),
+      anonymousId: identity.anonymousId(),
+      userId: identity.userId(),
+    };
     if (options.debug) {
       // eslint-disable-next-line no-console
       console.log("[meshlytics]", event.name, event);
@@ -26,8 +38,6 @@ export function createClient(options: MeshlyticsClientOptions = {}): MeshlyticsC
         name,
         timestamp: new Date().toISOString(),
         properties,
-        sessionId,
-        anonymousId,
       });
     },
 
@@ -45,8 +55,6 @@ export function createClient(options: MeshlyticsClientOptions = {}): MeshlyticsC
           utm: pageOptions.utm,
           referrer: pageOptions.referrer,
           properties: pageOptions.properties,
-          sessionId,
-          anonymousId,
         });
         return;
       }
@@ -76,19 +84,24 @@ export function createClient(options: MeshlyticsClientOptions = {}): MeshlyticsC
         utm: params.utmParams ? pageOptions.utm : undefined,
         referrer: params.referrer ? pageOptions.referrer : undefined,
         properties: pageOptions.properties,
-        sessionId,
-        anonymousId,
       });
     },
 
     identify(id, traits) {
+      identity.setUserId(id);
       emit({
         name: "identify",
         timestamp: new Date().toISOString(),
         properties: { id, traits },
-        sessionId,
-        anonymousId,
       });
+    },
+
+    reset() {
+      identity.reset();
+    },
+
+    setStorage(storage) {
+      identity.setStorage(storage);
     },
   };
 }

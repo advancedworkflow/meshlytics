@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createClient } from "./client.js";
+import { memoryStorage } from "./identity.js";
 import type { MeshlyticsPlan, PlanRoute } from "./types.js";
 
 const ALL_ON: PlanRoute["params"] = { routeParams: true, queryParams: true, utmParams: true, referrer: true };
@@ -164,6 +165,94 @@ describe("createClient().identify", () => {
     const event = transport.mock.calls[0]![0];
     expect(event.name).toBe("identify");
     expect(event.properties).toEqual({ id: "user_1", traits: { email: "a@b.com" } });
+    expect(event.userId).toBe("user_1");
+  });
+
+  it("attaches userId to every later event, keeping the anonymous id for stitching", () => {
+    const transport = vi.fn();
+    const client = createClient({ transport });
+
+    client.track("before_login");
+    client.identify("user_1");
+    client.track("after_login");
+
+    const [before, , after] = transport.mock.calls.map((call) => call[0]);
+    expect(before.userId).toBeUndefined();
+    expect(after.userId).toBe("user_1");
+    expect(after.anonymousId).toBe(before.anonymousId);
+  });
+
+  it("reset() drops the user and starts a new anonymous id and session", () => {
+    const transport = vi.fn();
+    const client = createClient({ transport });
+
+    client.identify("user_1");
+    client.track("a");
+    client.reset();
+    client.track("b");
+
+    const a = transport.mock.calls[1]![0];
+    const b = transport.mock.calls[2]![0];
+    expect(b.userId).toBeUndefined();
+    expect(b.anonymousId).not.toBe(a.anonymousId);
+    expect(b.sessionId).not.toBe(a.sessionId);
+  });
+});
+
+describe("createClient() identity across page loads", () => {
+  it("stores nothing by default: a new page load gets a new anonymous id", () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    createClient({ transport: first }).track("a");
+    createClient({ transport: second }).track("b");
+
+    expect(second.mock.calls[0]![0].anonymousId).not.toBe(first.mock.calls[0]![0].anonymousId);
+  });
+
+  it("setStorage() after consent keeps the ids already used on this page", () => {
+    const transport = vi.fn();
+    const client = createClient({ transport });
+    client.track("before_consent");
+    client.setStorage(memoryStorage());
+    client.track("after_consent");
+
+    const [before, after] = transport.mock.calls.map((call) => call[0]);
+    expect(after.anonymousId).toBe(before.anonymousId);
+    expect(after.sessionId).toBe(before.sessionId);
+  });
+
+  it("reuses the anonymous id, session and user from storage on the next load", () => {
+    const storage = memoryStorage();
+    const firstLoad = vi.fn();
+    const first = createClient({ transport: firstLoad, storage });
+    first.identify("user_1");
+
+    const secondLoad = vi.fn();
+    createClient({ transport: secondLoad, storage }).track("returned");
+
+    const before = firstLoad.mock.calls[0]![0];
+    const after = secondLoad.mock.calls[0]![0];
+    expect(after.anonymousId).toBe(before.anonymousId);
+    expect(after.sessionId).toBe(before.sessionId);
+    expect(after.userId).toBe("user_1");
+  });
+
+  it("starts a new session after the inactivity timeout", () => {
+    vi.useFakeTimers();
+    try {
+      const transport = vi.fn();
+      const client = createClient({ transport, storage: memoryStorage() });
+
+      client.track("a");
+      vi.advanceTimersByTime(31 * 60_000);
+      client.track("b");
+
+      const [a, b] = transport.mock.calls.map((call) => call[0]);
+      expect(b.sessionId).not.toBe(a.sessionId);
+      expect(b.anonymousId).toBe(a.anonymousId);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
