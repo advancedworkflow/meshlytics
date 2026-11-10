@@ -27,12 +27,24 @@ const plan: InstrumentationPlan = {
 describe("generateInstrumentationModule", () => {
   const output = generateInstrumentationModule(plan);
 
-  it("imports createClient from the meshlytics package", () => {
-    expect(output).toContain('import { createClient } from "meshlytics";');
+  it("only imports the plan type, so it adds nothing to the bundle", () => {
+    expect(output).toContain('import type { MeshlyticsPlan } from "meshlytics";');
+    expect(output).not.toMatch(/^import \{/m);
   });
 
-  it("exports a meshlytics client built from the plan", () => {
-    expect(output).toContain("export const meshlytics = createClient({");
+  it("exports the plan without creating a client, leaving endpoint/storage to the app", () => {
+    expect(output).toContain("export const meshlyticsPlan: MeshlyticsPlan = {");
+    // createClient only appears in the usage comment.
+    expect(output).not.toMatch(/^(?!\/\/).*createClient\(/m);
+  });
+
+  it("is valid code that evaluates to the plan", () => {
+    const body = output
+      .replace(/^import type .*$/m, "")
+      .replace("export const meshlyticsPlan: MeshlyticsPlan =", "return");
+    const evaluated = new Function(body)();
+    expect(evaluated.routes.map((r: { path: string }) => r.path)).toEqual(["/", "/checkout"]);
+    expect(evaluated.excludedRoutes).toEqual([]);
   });
 
   it("includes every tracked route's path", () => {
@@ -75,15 +87,15 @@ describe("generateInstrumentationModule", () => {
       ],
     });
 
-    expect(output).toContain('excludedRoutes: [\n      "/",\n      "/projects/new",\n    ],');
+    expect(output).toContain('excludedRoutes: [\n    "/",\n    "/projects/new",\n  ],');
   });
 
   it("produces an empty excludedRoutes array when every route is tracked", () => {
-    expect(output).toContain("excludedRoutes: [\n\n    ],");
+    expect(output).toContain("excludedRoutes: [],");
   });
 
   it("produces an empty routes array when nothing is tracked", () => {
     const empty = generateInstrumentationModule({ ...plan, tracked: [] });
-    expect(empty).toContain("routes: [\n\n    ],");
+    expect(empty).toContain("routes: [],");
   });
 });

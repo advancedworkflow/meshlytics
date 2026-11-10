@@ -51,7 +51,7 @@ describe("engine pipeline: discovery -> application model -> plan -> generated c
     const plan = buildInstrumentationPlan(model, ["/", "/pricing"]);
 
     const code = generateInstrumentationModule(plan);
-    const excluded = code.split("excludedRoutes: [")[1]?.split("\n    ],")[0] ?? "";
+    const excluded = code.split("excludedRoutes: [")[1]?.split("\n  ],")[0] ?? "";
 
     expect(excluded).toContain('"/about"');
     expect(excluded).toContain('"/blog/[...slug]"');
@@ -64,6 +64,6 @@ describe("engine pipeline: discovery -> application model -> plan -> generated c
     const plan = buildInstrumentationPlan(model, []);
 
     expect(plan.tracked).toEqual([]);
-    expect(generateInstrumentationModule(plan)).toContain("routes: [\n\n    ],");
+    expect(generateInstrumentationModule(plan)).toContain("routes: [],");
   });
 });

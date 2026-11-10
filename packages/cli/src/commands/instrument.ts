@@ -35,6 +35,8 @@ export async function instrumentCommand(cwd: string, args: string[]): Promise<vo
   ok(`Wrote meshlytics.instrumentation.ts`);
 
   log();
-  log(dim("Import it once near your app's root, for example:"));
-  log(dim(`  import { meshlytics } from "./meshlytics.instrumentation";`));
+  log(dim("Create your client from it once, near your app's root:"));
+  log(dim(`  import { createClient } from "meshlytics";`));
+  log(dim(`  import { meshlyticsPlan } from "./meshlytics.instrumentation";`));
+  log(dim(`  export const meshlytics = createClient({ plan: meshlyticsPlan, endpoint: "/api/events" });`));
 }
