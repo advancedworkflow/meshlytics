@@ -104,8 +104,38 @@ how:
 ```
 
 `meshlytics instrument` turns that into an instrumentation plan and a
-generated `meshlytics.instrumentation.ts` your app imports once, near
-its root.
+generated `meshlytics.instrumentation.ts` exporting `meshlyticsPlan`.
+Create your client from it once, near your app's root — where events
+go and how visitors are identified stay in your code, so regenerating
+the plan never overwrites them:
+
+```ts
+import { createClient } from "meshlytics";
+import { meshlyticsPlan } from "./meshlytics.instrumentation";
+
+export const meshlytics = createClient({
+  plan: meshlyticsPlan,
+  endpoint: "/api/events", // or `transport: (event) => ...`
+});
+```
+
+### Visitor identity and consent
+
+By default nothing is stored on the visitor's device: ids last for
+the current page load only, so no consent is required. To recognise
+returning visitors, opt in — up front, or once consent is given:
+
+```ts
+createClient({ plan: meshlyticsPlan, endpoint, storage: "localStorage" });
+
+// or, from your consent banner:
+meshlytics.setStorage("localStorage"); // keeps the ids already used on this page
+meshlytics.setStorage("memory");       // consent withdrawn: wipes what was stored
+```
+
+Sessions roll over after 30 minutes of inactivity (`sessionTimeoutMs`).
+`identify(userId)` attaches the user to every later event until
+`reset()`, which you should call on logout.
 
 ## Architecture
 
