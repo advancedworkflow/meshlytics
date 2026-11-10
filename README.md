@@ -39,14 +39,14 @@ Your application
 
 ## What it does
 
-- 🔎 Discovers application routes
-- 🧠 Understands route parameters
-- 🔗 Detects query parameters
-- 📊 Generates page and navigation events
-- 🧩 Supports framework-specific adapters
-- ⚡ Provides a lightweight runtime SDK
-- 🔌 Sends events to any compatible analytics backend
-- 🛠️ Keeps instrumentation configuration in your codebase
+- Discovers application routes
+- Understands route parameters
+- Detects query parameters
+- Generates page and navigation events
+- Supports framework-specific adapters
+- Provides a lightweight runtime SDK
+- Sends events to any compatible analytics backend
+- Keeps instrumentation configuration in your codebase
 
 ## Quick start
 
@@ -174,6 +174,7 @@ Instrumentation generated
 | `@meshlytics/sdk`            | Runtime analytics client (re-exported by `meshlytics`) |
 | `@meshlytics/next`           | Next.js App Router adapter                        |
 | `@meshlytics/react`          | Framework-agnostic React bindings                 |
+| `@meshlytics/react-router`   | React Router adapter                              |
 
 `meshlytics` is the only package meant to be installed directly in an
 application (`npm install -D meshlytics`); the `@meshlytics/*` scoped
@@ -187,10 +188,10 @@ Currently:
 
 - Next.js (App Router)
 - React
+- React Router
 
 Planned — see `packages/adapters/*/README.md`:
 
-- React Router
 - Vue
 - Nuxt
 - SvelteKit
