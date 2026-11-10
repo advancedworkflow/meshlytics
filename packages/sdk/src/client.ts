@@ -1,16 +1,7 @@
 import { BUILTIN_EVENTS, generateAnonymousId, generateSessionId, type MeshEvent } from "@meshlytics/core";
+import { createRouteMatcher, normalizePathname } from "./match.js";
 import { createFetchTransport, noopTransport } from "./transport.js";
-import type {
-  MeshlyticsClient,
-  MeshlyticsClientOptions,
-  MeshlyticsPlan,
-  PageOptions,
-  PlanRoute,
-} from "./types.js";
-
-function matchPlanRoute(plan: MeshlyticsPlan | undefined, path: string): PlanRoute | undefined {
-  return plan?.routes.find((route) => route.path === path);
-}
+import type { MeshlyticsClient, MeshlyticsClientOptions, PageOptions } from "./types.js";
 
 export function createClient(options: MeshlyticsClientOptions = {}): MeshlyticsClient {
   const transport =
@@ -19,6 +10,7 @@ export function createClient(options: MeshlyticsClientOptions = {}): MeshlyticsC
 
   const sessionId = generateSessionId();
   const anonymousId = generateAnonymousId();
+  const matchRoute = options.plan ? createRouteMatcher(options.plan.routes, options.plan.excludedRoutes) : undefined;
 
   function emit(event: MeshEvent): void {
     if (options.debug) {
@@ -40,16 +32,49 @@ export function createClient(options: MeshlyticsClientOptions = {}): MeshlyticsC
     },
 
     page(pageOptions: PageOptions = {}) {
-      const route = pageOptions.route ?? (typeof location !== "undefined" ? location.pathname : undefined);
-      const planRoute = matchPlanRoute(options.plan, route ?? "");
+      const pathname =
+        pageOptions.route ?? (typeof location !== "undefined" ? location.pathname : undefined);
+
+      // No plan: nothing to enforce, forward what the caller gave us.
+      if (!matchRoute) {
+        emit({
+          name: BUILTIN_EVENTS.PAGE_VIEW,
+          timestamp: new Date().toISOString(),
+          route: pathname,
+          queryParams: pageOptions.queryParams,
+          utm: pageOptions.utm,
+          referrer: pageOptions.referrer,
+          properties: pageOptions.properties,
+          sessionId,
+          anonymousId,
+        });
+        return;
+      }
+
+      // With a plan, only tracked routes emit, and only the parameters
+      // the plan enables for that route leave the browser.
+      const match = pathname === undefined ? undefined : matchRoute(normalizePathname(pathname));
+      if (!match) {
+        if (options.debug) {
+          // eslint-disable-next-line no-console
+          console.log("[meshlytics] page_view skipped, route not in plan:", pathname);
+        }
+        return;
+      }
+
+      const { params } = match.route;
+      const hasRouteParams = Object.keys(match.params).length > 0;
 
       emit({
         name: BUILTIN_EVENTS.PAGE_VIEW,
         timestamp: new Date().toISOString(),
-        route,
-        queryParams: planRoute?.params.queryParams === false ? undefined : pageOptions.queryParams,
-        utm: planRoute?.params.utmParams === false ? undefined : pageOptions.utm,
-        referrer: planRoute?.params.referrer === false ? undefined : pageOptions.referrer,
+        // The route pattern, never the concrete URL: ids only travel in
+        // routeParams, and only when the plan allows it.
+        route: match.route.path,
+        routeParams: params.routeParams && hasRouteParams ? match.params : undefined,
+        queryParams: params.queryParams ? pageOptions.queryParams : undefined,
+        utm: params.utmParams ? pageOptions.utm : undefined,
+        referrer: params.referrer ? pageOptions.referrer : undefined,
         properties: pageOptions.properties,
         sessionId,
         anonymousId,

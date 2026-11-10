@@ -23,6 +23,13 @@ export interface MeshlyticsPlan {
     router: string;
   };
   routes: PlanRoute[];
+  /**
+   * Discovered routes the developer chose not to track. They are only
+   * used for matching: a page view whose most specific match is one of
+   * these (e.g. `/projects/new` next to a tracked `/projects/[id]`) is
+   * dropped instead of being attributed to a broader tracked pattern.
+   */
+  excludedRoutes?: string[];
 }
 
 export type EventTransport = (event: MeshEvent) => void | Promise<void>;

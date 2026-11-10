@@ -46,6 +46,19 @@ describe("engine pipeline: discovery -> application model -> plan -> generated c
     expect(code).not.toContain('path: "/pricing"');
   });
 
+  it("carries untracked discovered routes into the generated code as excludedRoutes", async () => {
+    const model = await buildApplicationModel(FIXTURE_ROOT);
+    const plan = buildInstrumentationPlan(model, ["/", "/pricing"]);
+
+    const code = generateInstrumentationModule(plan);
+    const excluded = code.split("excludedRoutes: [")[1]?.split("\n    ],")[0] ?? "";
+
+    expect(excluded).toContain('"/about"');
+    expect(excluded).toContain('"/blog/[...slug]"');
+    expect(excluded).toContain('"/dashboard/projects/[id]"');
+    expect(excluded).not.toContain('"/pricing"');
+  });
+
   it("produces no tracked routes when nothing is selected, without erroring", async () => {
     const model = await buildApplicationModel(FIXTURE_ROOT);
     const plan = buildInstrumentationPlan(model, []);
