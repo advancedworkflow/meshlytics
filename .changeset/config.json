@@ -8,11 +8,11 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [
-    "meshlytics-monorepo",
     "example-nextjs-app",
     "example-react-app",
-    "@meshlytics/react-router",
+    "example-react-router-app",
     "@meshlytics/vue",
-    "@meshlytics/nuxt"
+    "@meshlytics/nuxt",
+    "@meshlytics/tests-integration"
   ]
 }
