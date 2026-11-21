@@ -1,4 +1,5 @@
 import type { MeshEvent, UtmParams } from "@meshlytics/core";
+import type { StorageOption } from "./identity.js";
 
 export interface PlanRoute {
   path: string;
@@ -23,6 +24,13 @@ export interface MeshlyticsPlan {
     router: string;
   };
   routes: PlanRoute[];
+  /**
+   * Discovered routes the developer chose not to track. They are only
+   * used for matching: a page view whose most specific match is one of
+   * these (e.g. `/projects/new` next to a tracked `/projects/[id]`) is
+   * dropped instead of being attributed to a broader tracked pattern.
+   */
+  excludedRoutes?: string[];
 }
 
 export type EventTransport = (event: MeshEvent) => void | Promise<void>;
@@ -34,6 +42,16 @@ export interface MeshlyticsClientOptions {
   endpoint?: string;
   /** Custom sink, e.g. to forward events to PostHog, Mixpanel, or Meshlytics Cloud. */
   transport?: EventTransport;
+  /**
+   * Where the anonymous id, session and identified user are kept.
+   * Defaults to `"memory"`: nothing is written to the device, so ids
+   * only last for the current page load and no consent is needed.
+   * Pass `"localStorage"` (or call `setStorage` once consent is given)
+   * to recognise returning visitors.
+   */
+  storage?: StorageOption;
+  /** Inactivity, in ms, after which a new session starts. Defaults to 30 minutes. */
+  sessionTimeoutMs?: number;
   /** Logs every emitted event to the console. Defaults to false. */
   debug?: boolean;
 }
@@ -49,5 +67,14 @@ export interface PageOptions {
 export interface MeshlyticsClient {
   track(name: string, properties?: Record<string, unknown>): void;
   page(options?: PageOptions): void;
+  /** Attaches `id` as `userId` to this and every later event, across page loads, until `reset()`. */
   identify(id: string, traits?: Record<string, unknown>): void;
+  /** Forgets the identified user and starts a new anonymous id and session. Call it on logout. */
+  reset(): void;
+  /**
+   * Switches where identity is stored, keeping the current ids. Call
+   * `setStorage("localStorage")` when consent is given, and
+   * `setStorage("memory")` when it is withdrawn (which wipes what was stored).
+   */
+  setStorage(storage: StorageOption): void;
 }

@@ -61,6 +61,7 @@ export const MeshEventSchema = z.object({
   properties: z.record(z.string(), z.unknown()).optional(),
   sessionId: z.string().optional(),
   anonymousId: z.string().optional(),
+  userId: z.string().optional(),
 });
 export type MeshEvent = z.infer<typeof MeshEventSchema>;
 
