@@ -1,6 +1,6 @@
 {
   "name": "@meshlytics/core",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Zero-dependency shared types and primitives used across the Meshlytics runtime.",
   "license": "MIT",
   "type": "module",
@@ -12,7 +12,9 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",

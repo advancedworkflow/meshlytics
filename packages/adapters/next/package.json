@@ -1,6 +1,6 @@
 {
   "name": "@meshlytics/next",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Next.js App Router adapter for Meshlytics: automatic pageview tracking on navigation.",
   "license": "MIT",
   "type": "module",
@@ -12,7 +12,9 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",

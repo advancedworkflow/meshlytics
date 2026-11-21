@@ -1,6 +1,6 @@
 {
   "name": "@meshlytics/instrumentation",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Generates SDK bootstrap code from a Meshlytics instrumentation plan.",
   "license": "MIT",
   "type": "module",
@@ -12,7 +12,9 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
