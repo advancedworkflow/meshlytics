@@ -27,6 +27,8 @@ export interface MeshEvent {
   properties?: Record<string, unknown>;
   sessionId?: string;
   anonymousId?: string;
+  /** Set once `identify()` has been called, until `reset()`. */
+  userId?: string;
 }
 
 export const BUILTIN_EVENTS = {
